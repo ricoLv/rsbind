@@ -7,6 +7,8 @@ use syn;
 
 use errors::ErrorKind::*;
 use errors::*;
+use syn::TraitBound;
+use syn::TypeParamBound;
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
@@ -121,12 +123,12 @@ fn parse_methods(items: &Vec<syn::TraitItem>) -> Result<(Vec<MethodDesc>, bool)>
                 println!("found method => {}", method_inner.sig.ident);
 
                 let (return_type, origin_return_ty) =
-                    parse_return_type(&method_inner.sig.decl.output)?;
+                    parse_return_type(&method_inner.sig.output)?;
 
                 // arguments
-                for input in method_inner.sig.decl.inputs.iter() {
+                for input in method_inner.sig.inputs.iter() {
                     match input {
-                        syn::FnArg::SelfRef(ref _arg) => {
+                        syn::FnArg::Receiver(ref _arg) => {
                             is_callback = true;
                             continue;
                         }
@@ -236,16 +238,15 @@ fn parse_one_arg(input: &syn::FnArg) -> Result<ArgDesc> {
     let mut arg_type: Option<AstType> = Some(AstType::Void);
     let mut origin_arg_ty: Option<String> = Some("".to_owned());
     match input {
-        syn::FnArg::Captured(ref arg) => {
-            match arg.pat {
+        syn::FnArg::Typed(ref arg) => {
+            match *arg.pat {
                 syn::Pat::Ident(ref pat_ident) => {
                     arg_name = Some(pat_ident.ident.to_string());
                     println!("found arg pat = {:?}", pat_ident.ident.to_string());
                 }
                 _ => (),
             }
-
-            match arg.ty {
+            match *arg.ty {
                 syn::Type::Path(ref type_path) => {
                     let segments = &(type_path.path.segments);
                     let ident = (&segments[segments.len() - 1].ident).to_string();
@@ -254,9 +255,28 @@ fn parse_one_arg(input: &syn::FnArg) -> Result<ArgDesc> {
                         let angle_bracketed = &segments[segments.len() - 1].arguments;
                         match angle_bracketed {
                             syn::PathArguments::AngleBracketed(t) => {
-                                let arg = &t.args[0];
+                                let mut arg = &t.args[0];
+                                println!("AngleBracketed arg  {:?})", arg);
                                 match arg {
                                     syn::GenericArgument::Type(ty) => match ty {
+                                        syn::Type::TraitObject(ref type_objec) => {
+                                            println!("found dy  {:?})", type_objec);
+                                            for bound in type_objec.bounds.iter() {
+                                              match bound {
+                                                  TypeParamBound::Trait(TraitBound{path, ..}) => {
+                                                    println!("found boxed types = {:?})", path);
+                                                    let segments = &(path.segments);
+                                                    let ident =
+                                                        (&segments[segments.len() - 1].ident).to_string();
+                                                    arg_type = Some(AstType::from("Box".clone()));
+                                                    origin_arg_ty = Some(ident.clone());
+                                                    break;
+                                                  }
+                                                  _ => {}
+                                              }  
+                                            }
+                                            println!("found dy  {:?})", type_objec);
+                                        }
                                         syn::Type::Path(ref type_path) => {
                                             println!("found boxed types = {:?})", type_path);
                                             let segments = &(type_path.path.segments);

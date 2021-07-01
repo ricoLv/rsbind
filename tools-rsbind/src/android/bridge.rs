@@ -226,7 +226,7 @@ impl<'a> FileGenStrategy for JniFileGenStrategy<'a> {
             }
             AstType::String => {
                 quote! {
-                    let #rust_arg_name: String = env.get_string(#arg_name_ident).expect("Couldn't get java string!").into();
+                    let #rust_arg_name: String = if let Ok(val) = env.get_string(#arg_name_ident) {val.into()} else {"".to_owned()};
                 }
             }
             AstType::Vec(base) => match base {
@@ -260,7 +260,7 @@ impl<'a> FileGenStrategy for JniFileGenStrategy<'a> {
                     let json_arg_ident =
                         Ident::new(&format!("json_{}", &arg.name), Span::call_site());
                     quote! {
-                        let #json_arg_ident: String = env.get_string(#arg_name_ident).expect("Couldn't get java string!").into();
+                        let #json_arg_ident: String = if let Ok(val) = env.get_string(#arg_name_ident) {val.into()} else {"".to_owned()};
                         let #rust_arg_name = serde_json::from_str(&#json_arg_ident).unwrap();
                     }
                 }

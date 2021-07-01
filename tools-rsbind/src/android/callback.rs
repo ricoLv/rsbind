@@ -26,8 +26,10 @@ impl CallbackGenStrategy for JavaCallbackStrategy {
         let arg_name_ident = Ident::new(&arg.name, Span::call_site());
 
         // find the callback type for this argument.
+        // println!("arg_convert trait_desc {:?} {:?}", trait_desc, callbacks);
         let mut callback_desc = None;
         for desc in callbacks {
+            // println!("arg_convert {:?}", desc);
             if desc.name == arg.origin_ty {
                 callback_desc = Some(desc);
             }
@@ -43,6 +45,7 @@ impl CallbackGenStrategy for JavaCallbackStrategy {
         let _callback_methods = TokenStream::new();
         let callback_desc = callback_desc.unwrap();
         let mut methods_result = TokenStream::new();
+        let mut delete_local_ref = TokenStream::new();
         for method in callback_desc.methods.iter() {
             // arguments converting in callback
             let mut args_convert = TokenStream::new();
@@ -60,6 +63,10 @@ impl CallbackGenStrategy for JavaCallbackStrategy {
                         }
                     }
                     AstType::String => {
+                        delete_local_ref = quote! {
+                            #delete_local_ref
+                            env.delete_local_ref(#cb_arg_name);
+                        };
                         quote! {
                             let #cb_arg_name = env.new_string(#cb_origin_arg_name).unwrap().into();
                         }
@@ -82,13 +89,30 @@ impl CallbackGenStrategy for JavaCallbackStrategy {
                                     &format!("j_tmp_vec_{}", cb_arg.name),
                                     Span::call_site(),
                                 );
+                                delete_local_ref = quote! {
+                                    #delete_local_ref
+                                    env.delete_local_ref(#cb_arg_name);
+                                };
                                 quote! {
                                     let #cb_tmp_vec_arg_name = #cb_origin_arg_name.into_iter().map(|each| #struct_ident::from(each)).collect::<Vec<#struct_ident>>();
                                     let #cb_tmp_arg_name = serde_json::to_string(&#cb_tmp_vec_arg_name);
                                     let #cb_arg_name = env.new_string(#cb_tmp_arg_name.unwrap()).unwrap().into();
                                 }
                             }
+                            AstBaseType::Byte => {
+                                delete_local_ref = quote! {
+                                    #delete_local_ref
+                                    env.delete_local_ref(#cb_arg_name);
+                                };
+                                quote! {
+                                    let #cb_arg_name = env.byte_array_from_slice(&#cb_origin_arg_name).unwrap().into();
+                                }
+                            },
                             _ => {
+                                delete_local_ref = quote! {
+                                    #delete_local_ref
+                                    env.delete_local_ref(#cb_arg_name);
+                                };
                                 quote! {
                                     let #cb_tmp_arg_name = serde_json::to_string(&#cb_origin_arg_name);
                                     let #cb_arg_name = env.new_string(#cb_tmp_arg_name.unwrap()).unwrap().into();
@@ -101,6 +125,10 @@ impl CallbackGenStrategy for JavaCallbackStrategy {
                             Ident::new(&format!("Struct_{}", &cb_arg.origin_ty), Span::call_site());
                         let cb_tmp_arg_name =
                             Ident::new(&format!("r_tmp_{}", cb_arg.name), Span::call_site());
+                        delete_local_ref = quote! {
+                                #delete_local_ref
+                                env.delete_local_ref(#cb_arg_name);
+                            };
                         quote! {
                             let #cb_tmp_arg_name = serde_json::to_string(&#struct_copy_name::from(#cb_origin_arg_name));
                             let #cb_arg_name = env.new_string(#cb_tmp_arg_name.unwrap()).unwrap().into();
@@ -190,7 +218,7 @@ impl CallbackGenStrategy for JavaCallbackStrategy {
                     quote!(#ident)
                 }
             };
-
+            
             let return_convert = match method.return_type {
                 AstType::Void => quote!(),
                 AstType::Boolean => quote! {
@@ -265,7 +293,7 @@ impl CallbackGenStrategy for JavaCallbackStrategy {
                             JValue::Double(value) => r_result = Some(value),
                             _ => assert!(false)
                         }
-                        let s_result = env.get_string(r_result.unwrap()).expect("Couldn't get java string!").into();
+                        let s_result = if let Ok(val) = env.get_string(r_result.unwrap()) {val.into()} else {"".to_owned()};
                     }
                 }
                 AstType::String => {
@@ -313,7 +341,7 @@ impl CallbackGenStrategy for JavaCallbackStrategy {
                             #cb_arg_array
                         ],
                     );
-
+                    #delete_local_ref
                     #return_convert
                     #return_result_ident
                 }

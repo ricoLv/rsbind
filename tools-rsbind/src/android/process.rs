@@ -1,8 +1,7 @@
-use super::config::Android;
-use android::dest::JavaCodeGen;
 use ast::AstResult;
 use bridge::prj::Unpack;
 use bridges::BridgeGen::JavaGen;
+use android::dest::JavaCodeGen;
 use errors::ErrorKind::*;
 use errors::*;
 use fs_extra;
@@ -14,6 +13,7 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::Command;
 use unzip;
+use super::config::Android;
 
 const MAGIC_NUM: &'static str = "*521%";
 
@@ -26,7 +26,7 @@ pub(crate) struct AndroidProcess<'a> {
     host_crate_name: &'a str,
     ast_result: &'a AstResult,
     config: Option<Android>,
-    ast: &'a AstResult,
+    ast: &'a AstResult
 }
 
 impl<'a> AndroidProcess<'a> {
@@ -39,7 +39,7 @@ impl<'a> AndroidProcess<'a> {
         host_crate_name: &'a str,
         ast_result: &'a AstResult,
         config: Option<Android>,
-        ast: &'a AstResult,
+        ast: &'a AstResult
     ) -> Self {
         AndroidProcess {
             origin_prj_path,
@@ -50,7 +50,7 @@ impl<'a> AndroidProcess<'a> {
             host_crate_name,
             ast_result,
             config,
-            ast,
+            ast
         }
     }
 }
@@ -62,11 +62,11 @@ impl<'a> AndroidProcess<'a> {
             &self.host_crate_name.replace("-", "_")
         )
     }
-
+    
     fn config(&self) -> Android {
         match self.config {
             Some(ref config) => config.to_owned(),
-            None => Android::default(),
+            None => Android::default()
         }
     }
 }
@@ -112,15 +112,14 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
 
     fn build_bridge_prj(&self) -> Result<()> {
         println!("building android bridge project");
-
         let phone_archs = self.config().phone_archs();
         let mut build_cmds = String::from("true");
         for phone_arch in phone_archs.iter() {
             let tmp = format!(
-                "cargo rustc --target {}  --lib {} --target-dir {} {}",
+                "cargo ndk --target {} --platform {} -- build {} --target-dir target {}",
                 phone_arch,
+                self.config().min_ver(),
                 self.config().release_str(),
-                "target",
                 &self.config().rustc_param()
             );
             build_cmds = format!("{} && {}", &build_cmds, &tmp);
@@ -129,10 +128,10 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
         let phone64_archs = self.config().phone64_archs();
         for phone64_arch in phone64_archs.iter() {
             let tmp = format!(
-                "cargo rustc --target {}  --lib {} --target-dir {} {}",
+                "cargo ndk --target {} --platform {} -- build {} --target-dir target {}",
                 phone64_arch,
+                self.config().min_ver(),
                 self.config().release_str(),
-                "target",
                 &self.config().rustc_param()
             );
             build_cmds = format!("{} && {}", &build_cmds, &tmp);
@@ -141,10 +140,10 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
         let x86_archs = self.config().x86_archs();
         for x86_arch in x86_archs.iter() {
             let tmp = format!(
-                "cargo rustc --target {}  --lib {} --target-dir {} {}",
+                "cargo ndk --target {} --platform {} -- build {} --target-dir target {}",
                 x86_arch,
+                self.config().min_ver(),
                 self.config().release_str(),
-                "target",
                 &self.config().rustc_param()
             );
             build_cmds = format!("{} && {}", &build_cmds, &tmp);
@@ -211,8 +210,8 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
             skip_exist: false,
             buffer_size: 1024,
             copy_inside: true,
-            content_only: false,
             depth: 65535,
+            content_only: false,
         };
 
         println!("copy output files to android project.");
@@ -276,10 +275,8 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
                     e
                 ))
             })?;
-            let replaced = manifest_text.replace(
-                &format!("$({}-namespace)", MAGIC_NUM),
-                &self.config().namespace(),
-            );
+            let replaced =
+                manifest_text.replace(&format!("$({}-namespace)", MAGIC_NUM), &self.config().namespace());
             fs::write(manifest_path, replaced).map_err(|e| {
                 FileError(format!(
                     "write android dest project AndroidManifest  error {:?}",
@@ -298,21 +295,19 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
             fs::remove_dir_all(&java_gen_path)?;
         }
         fs::create_dir_all(&java_gen_path)?;
-
-        JavaCodeGen {
+        
+        JavaCodeGen{
             origin_prj: self.origin_prj_path,
             java_gen_dir: &java_gen_path,
             ast: &self.ast_result,
             namespace: self.config().namespace(),
             so_name: self.config().so_name(),
-            ext_libs: self.config().ext_libs(),
-        }
-        .gen_java_code()?;
+            ext_libs: self.config().ext_libs()
+        }.gen_java_code()?;
 
         // get the output dir string
         println!("get output dir string");
-        let mut output_dir = self
-            .dest_prj_path
+        let mut output_dir = self.dest_prj_path
             .join("rustlib")
             .join("src")
             .join("main")
@@ -325,7 +320,7 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
         let namespace = self.config().namespace();
         let pkg_split = namespace.split(".").collect::<Vec<&str>>();
         for pkg_part in pkg_split.iter() {
-            output_dir = output_dir.join(pkg_part);
+           output_dir = output_dir.join(pkg_part);
         }
 
         let options = CopyOptions {
@@ -333,8 +328,8 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
             skip_exist: false,
             buffer_size: 1024,
             copy_inside: true,
-            content_only: false,
             depth: 65535,
+            content_only: false,
         };
 
         fs_extra::copy_items(&vec![java_gen_path], &output_dir, &options)
@@ -367,8 +362,13 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
             skip_exist: false,
             buffer_size: 1024,
             copy_inside: true,
-            content_only: false,
             depth: 65535,
+            content_only: false,
+        };
+        let debug_release = if self.config().is_release() {
+            "release"
+        } else {
+            "debug"
         };
 
         let src_arr = self
@@ -378,6 +378,7 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
             .join("outputs")
             .join("aar")
             .join("rustlib-release.aar");
+            // .join(format!("{}-{}.aar", self.config().so_name() , debug_release));
         let target = self.origin_prj_path.join("target").join("android");
         if target.exists() {
             fs::remove_dir_all(&target).unwrap();

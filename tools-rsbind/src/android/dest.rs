@@ -416,8 +416,7 @@ impl<'a> TraitGen<'a> {
                         method.return_type,
                         self.pkg.clone(),
                         method.origin_return_ty.clone(),
-                    )
-                    .to_transfer();
+                    ).to_transfer();
                 }
 
                 let mut arg_calls = String::new();
@@ -425,8 +424,11 @@ impl<'a> TraitGen<'a> {
                 argument.modifiers = vec![];
                 m.arguments.push(argument);
                 for (index, arg) in method.args.iter().enumerate() {
-                    let arg_type = JavaType::new(arg.ty, self.pkg.clone(), arg.origin_ty.clone())
-                        .to_transfer();
+                    let arg_type = JavaType::new(
+                        arg.ty,
+                        self.pkg.clone(),
+                        arg.origin_ty.clone(),
+                    ).to_transfer();
                     let mut argument = Argument::new(arg_type, arg.name.clone());
                     argument.modifiers = vec![];
                     m.arguments.push(argument);
@@ -468,7 +470,8 @@ impl<'a> TraitGen<'a> {
                                 ".class);"
                             ));
                         }
-                        AstType::Vec(_) => {
+                        AstType::Vec(sub_type) if sub_type == AstBaseType::Struct || sub_type == AstBaseType::String  => {
+                            
                             let list = java::imported("java.util", "List");
                             let json = java::imported("com.alibaba.fastjson", "JSON");
                             let java =

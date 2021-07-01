@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 pub fn gen_swift_code(prj_dir: &PathBuf, ast_dir: &PathBuf, bin_dir: &PathBuf) -> Result<()> {
-    print!("gen_swift_code");
+    println!("gen_swift_code");
 
     fs::create_dir_all(&bin_dir)
         .or_else(|_e| Err(FileError("create bin dir failed.".to_string())))?;
@@ -57,15 +57,14 @@ pub fn gen_swift_code(prj_dir: &PathBuf, ast_dir: &PathBuf, bin_dir: &PathBuf) -
         "chmod a+x ./swift_gen && ./swift_gen {} rustlib.ffi {} && cp {}/* {}",
         ast_dir_str, swift_gen_dir_str, swift_gen_dir_str, output_dir_str
     );
-
+    println!("command: {} bin_dir: {:?}", command, bin_dir);
     let output = Command::new("sh")
         .arg("-c")
         .arg(command)
         .current_dir(bin_dir)
         .output()?;
 
-    print!("gen_swift_code over");
-
+    println!("gen_swift_code over");
     if !output.status.success() {
         return Err(
             CommandError(format!("execute swift gen error. {:?}", output).to_string()).into(),

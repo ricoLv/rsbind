@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>output_path</key>
+        <string>../../target/universal</string>
+        <key>framework</key>
+        <string>rustlib</string>
+        <key>targets</key>
+        <array>
+            <dict>
+                <key>sdk</key>
+                <string>iOS</string>
+                <key>workspace</key>
+                <string>rustlib.xcodeproj/project.xcworkspace</string>
+                <key>scheme</key>
+                <string>rustlib</string>
+            </dict>
+            <dict>
+                <key>sdk</key>
+                <string>iOSSimulator</string>
+                <key>workspace</key>
+                <string>rustlib.xcodeproj/project.xcworkspace</string>
+                <key>scheme</key>
+                <string>rustlib</string>
+            </dict>
+        </array>
+    </dict>
+</plist>

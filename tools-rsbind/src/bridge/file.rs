@@ -77,7 +77,6 @@ impl<'a, T: FileGenStrategy + 'a> BridgeFileGen<'a, T> {
     ///
     pub(crate) fn gen_sdk_file(&self, file_name: &str, mod_names: &Vec<String>) -> Result<()> {
         let result = self.strategy.gen_sdk_file(mod_names).unwrap();
-
         let out_file_path = self.out_dir.join(file_name);
         let mut f = File::create(&out_file_path).unwrap();
         f.write_all(&result.to_string().into_bytes()).unwrap();

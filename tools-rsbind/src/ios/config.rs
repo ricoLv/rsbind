@@ -1,9 +1,13 @@
+use std::collections::HashMap;
+
+use serde_json::Map;
+
 const PHONE_ARCHS: [&str; 2] = ["aarch64-apple-ios", "armv7-apple-ios"];
-const SIMULATOR_ARCHS: [&str; 2] = ["i386-apple-ios", "x86_64-apple-ios"];
+const SIMULATOR_ARCHS: [&str; 1] = ["x86_64-apple-ios"];
 
 ///
 /// iOS Configuration struct
-///
+/// 
 #[derive(Clone, Deserialize, Debug)]
 pub struct Ios {
     pub rustc_param: Option<String>,
@@ -11,25 +15,22 @@ pub struct Ios {
     pub arch_simu: Option<Vec<String>>,
     pub release: Option<bool>,
     pub features_def: Option<Vec<String>>,
+    pub toolchains: Option<HashMap<String, String>>,
 }
 
 impl Default for Ios {
     fn default() -> Self {
-        let arch_phone = Some(
-            PHONE_ARCHS
-                .to_vec()
-                .into_iter()
-                .map(|item| item.to_owned())
-                .collect(),
-        );
-
-        let arch_simu = Some(
-            SIMULATOR_ARCHS
-                .to_vec()
-                .into_iter()
-                .map(|item| item.to_owned())
-                .collect(),
-        );
+        let arch_phone = Some(PHONE_ARCHS
+            .to_vec()
+            .into_iter()
+            .map(|item| item.to_owned())
+            .collect());
+        
+        let arch_simu = Some(SIMULATOR_ARCHS
+            .to_vec()
+            .into_iter()
+            .map(|item| item.to_owned())
+            .collect());
 
         Self {
             rustc_param: None,
@@ -37,6 +38,7 @@ impl Default for Ios {
             arch_simu,
             release: Some(true),
             features_def: None,
+            toolchains: None,
         }
     }
 }
@@ -94,6 +96,18 @@ impl Ios {
         match self.features_def {
             Some(ref features) => features.clone(),
             None => vec![],
+        }
+    }
+
+    pub fn toolchain(&self, target: &str) -> String {
+        match self.toolchains {
+            Some(ref toolchains) => {
+                match toolchains.get(target) {
+                    Some(val) => val.to_owned(),
+                    None => "".to_owned(),
+                }
+            },
+            None => "".to_owned()
         }
     }
 }
