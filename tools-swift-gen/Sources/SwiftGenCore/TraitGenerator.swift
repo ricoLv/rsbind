@@ -182,18 +182,22 @@ class TraitGenerator {
                                         .add(codeLine: "let c_\(arg.name) = c_option_\(arg.name)!")
                                 case AstType.VEC(let base):
                                     var vecType = arg.ty.toStr()
-                                    if base == AstBaseType.STRUCT {
-                                        vecType = arg.origin_ty.replacingOccurrences(of: "Vec", with: "Array")
+                                    // if base == AstBaseType.STRUCT {
+                                    vecType = arg.origin_ty.replacingOccurrences(of: "Vec", with: "Array")
+                                    // }
+                                    if (if base == AstBaseType.STRUCT) {
+                                        closureBuilder.add(codeLine: "let c_tmp_\(arg.name) = String(cString:\(arg.name)!)")
+                                            .add(codeLine: "var c_option_\(arg.name): \(vecType)?")
+                                            .add(codeLine: "autoreleasepool {")
+                                            .add(codeLine: "let c_tmp_json_\(arg.name) = c_tmp_\(arg.name).data(using: .utf8)!")
+                                            .add(codeLine: "let decoder = JSONDecoder()")
+                                            .add(codeLine: "c_option_\(arg.name) = try! decoder.decode(\(vecType).self, from: c_tmp_json_\(arg.name))")
+                                            .add(codeLine: "}")
+                                            .add(codeLine: "let c_\(arg.name) = c_option_\(arg.name)!")
+                                    } else {
+                                        closureBuilder.add(codeLine: "let c_tmp_\(arg.name) = String(cString:\(arg.name)!)")
                                     }
                                     
-                                    closureBuilder.add(codeLine: "let c_tmp_\(arg.name) = String(cString:\(arg.name)!)")
-                                        .add(codeLine: "var c_option_\(arg.name): \(vecType)?")
-                                        .add(codeLine: "autoreleasepool {")
-                                        .add(codeLine: "let c_tmp_json_\(arg.name) = c_tmp_\(arg.name).data(using: .utf8)!")
-                                        .add(codeLine: "let decoder = JSONDecoder()")
-                                        .add(codeLine: "c_option_\(arg.name) = try! decoder.decode(\(vecType).self, from: c_tmp_json_\(arg.name))")
-                                        .add(codeLine: "}")
-                                        .add(codeLine: "let c_\(arg.name) = c_option_\(arg.name)!")
                                 default:
                                     print("don't support \(arg.origin_ty) in callback")
                                     assert(false)

@@ -24,60 +24,19 @@ rustup component add rustfmt --toolchain nightly-x86_64-apple-darwin
 ```sh
 rustup target add aarch64-linux-android arm-linux-androideabi armv7-linux-androideabi i686-linux-android
 ```
-
-~~windows & linux~~
-~~rustup target add x86_64-pc-windows-gnu~~
-~~rustup target add x86_64-unknown-linux-gnu~~
-
-### 安装NDK和SDK 
+### 安装cargo ndk
 ```sh
-brew install coreutils
-brew tap caskroom/cask;\
-brew cask install android-sdk;\
-brew cask install android-ndk
+cargo install cargo-ndk
 ```
+### 安装Android NDK和SDK 
+省略，自行百度
 ### 增加环境变量
 ```sh
-export ANDROID_SDK=/usr/local/share/android-sdk
-export ANDROID_NDK=/usr/local/share/android-ndk
-export PATH=$ANDROID_SDK/tools:$ANDROID_SDK/platform-tools:$PATH
-export NDK_STANDALONE_DIR=/usr/local/ndk
-export PATH=$PATH:$NDK_STANDALONE_DIR/ndk-standalone-21-armeabi/bin
-export PATH=$PATH:$NDK_STANDALONE_DIR/ndk-standalone-21-arm64-v8a/bin
-export PATH=$PATH:$NDK_STANDALONE_DIR/ndk-standalone-21-x86/bin
+export ANDROID_SDK_ROOT=/the/path/to/sdk
+export ANDROID_NDK_HOME=/the/path/to/ndk
+export PATH="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/{darwin-x86_64}/bin:$PATH"
 ```
 
-### 创建NDK standalone
-```sh
-sudo mkdir -p ${NDK_STANDALONE_DIR}; \
-sudo ${ANDROID_NDK}/build/tools/make_standalone_toolchain.py \
-      --api 21 --force \
-      --install-dir ${NDK_STANDALONE_DIR}/ndk-standalone-21-x86 --arch x86; \
-sudo ${ANDROID_NDK}/build/tools/make_standalone_toolchain.py \
-      --api 21 --force \
-      --install-dir ${NDK_STANDALONE_DIR}/ndk-standalone-21-armeabi --arch arm; \
-sudo ${ANDROID_NDK}/build/tools/make_standalone_toolchain.py \
-      --api 21 --force \
-      --install-dir ${NDK_STANDALONE_DIR}/ndk-standalone-21-arm64-v8a --arch arm64
-```
-
-### 增加下面的配置到文件 ~/.cargo/config
-Note: change ndk standalone version to your version
-```toml
-[target.arm-linux-androideabi]
-linker = "/usr/local/ndk/ndk-standalone-21-armeabi/bin/arm-linux-androideabi-gcc"
-ar = "/usr/local/ndk/ndk-standalone-21-armeabi/bin/arm-linux-androideabi-ar"
-[target.i686-linux-android]
-linker = "/usr/local/ndk/ndk-standalone-21-x86/bin/i686-linux-android-gcc"
-ar = "/usr/local/ndk/ndk-standalone-21-x86/bin/i686-linux-android-ar"
-[target.aarch64-linux-android]
-linker = "/usr/local/ndk/ndk-standalone-21-arm64-v8a/bin/aarch64-linux-android-gcc"
-ar = "/usr/local/ndk/ndk-standalone-21-arm64-v8a/bin/aarch64-linux-android-ar"
-[target.armv7-linux-androideabi]
-linker = "/usr/local/ndk/ndk-standalone-21-armeabi/bin/arm-linux-androideabi-gcc"
-ar = "/usr/local/ndk/ndk-standalone-21-armeabi/bin/arm-linux-androideabi-ar"
-```
- 
 ### 测试环境是否搭建ok
 自己在一个路径下新建一个工程： cargo new my_project --lib
 编译试一下：cargo rustc  --target arm-linux-androideabi
@@ -85,7 +44,7 @@ ar = "/usr/local/ndk/ndk-standalone-21-armeabi/bin/arm-linux-androideabi-ar"
 ## iOS:
 ### 安装targets
 ```sh
-rustup target add aarch64-apple-ios armv7-apple-ios armv7s-apple-ios i386-apple-ios x86_64-apple-ios
+rustup target add aarch64-apple-ios x86_64-apple-ios
 ```
 
 ### 安装cargo-lipo

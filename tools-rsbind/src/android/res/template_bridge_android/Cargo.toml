@@ -14,16 +14,16 @@ lto = true
 codegen-units = 1
 panic = 'abort'
 
+
 [dependencies]
 $(*521%-host_crate) = { path = "../../"}
-jni = { version = "0.13.1", default-features = false }
-# jni = { git = "https://github.com/king6cong/jni-rs", branch = "sdk" }
-serde_json = "1.0"
-serde_derive = "1.0"
+jni = { git = "https://github.com/king6cong/jni-rs", branch = "sdk" }
+serde_json = "1.0.59"
+serde_derive = "1.0.116"
 serde = "1.0"
-lazy_static = "1.0.0"
-android_logger = "0.7"
-log = "0.4"
+lazy_static = "1.4.0"
+android_logger = "0.9.0"
+log = "0.4.11"
 
 [features]
 rsbind = []

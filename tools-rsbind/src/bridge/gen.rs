@@ -43,7 +43,6 @@ impl<'a, T: ModGenStrategy> BridgeModGen<'a, T> {
         let traits = &self.ast_result.trait_descs;
         let structs = &self.ast_result.struct_descs;
         let imp_info = &self.ast_result.imp_desc;
-
         let mut bridges: Vec<String> = vec![];
         for each_mod in traits {
             let mod_name = each_mod.0;

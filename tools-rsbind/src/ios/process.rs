@@ -1,4 +1,3 @@
-use super::config::Ios;
 use super::dest;
 use ast::AstResult;
 use bridge::prj::Unpack;
@@ -15,6 +14,7 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::Command;
 use unzip;
+use super::config::Ios;
 
 const IOS_ARCH: &str = "universal";
 
@@ -88,7 +88,7 @@ impl<'a> IosProcess<'a> {
     fn config(&self) -> Ios {
         match self.config {
             Some(ref config) => config.to_owned(),
-            None => Ios::default(),
+            None => Ios::default()
         }
     }
 }
@@ -149,8 +149,10 @@ impl<'a> BuildProcess for IosProcess<'a> {
         );
         let iphoneos_archs = self.config().iphoneos_archs();
         for iphoneos_arch in iphoneos_archs.iter() {
+            let toolchain = self.config().toolchain(iphoneos_arch);
             let tmp = format!(
-                "cargo rustc --target {}  --lib {} --target-dir {} {}",
+                "cargo {} rustc --target {}  --lib {} --target-dir {} {}",
+                toolchain,
                 iphoneos_arch,
                 self.config().release_str(),
                 "target",
@@ -168,8 +170,10 @@ impl<'a> BuildProcess for IosProcess<'a> {
 
         let simulator_archs = self.config().simulator_archs();
         for simulator_arch in simulator_archs.iter() {
+            let toolchain = self.config().toolchain(simulator_arch);
             let tmp = format!(
-                "cargo rustc --target {}  --lib {} --target-dir {} {}",
+                "cargo {} rustc --target {}  --lib {} --target-dir {} {}",
+                toolchain,
                 simulator_arch,
                 self.config().release_str(),
                 "target",
@@ -234,8 +238,8 @@ impl<'a> BuildProcess for IosProcess<'a> {
             skip_exist: false,
             buffer_size: 1024,
             copy_inside: true,
-            content_only: false,
             depth: 65535,
+            content_only: false,
         };
 
         let debug_release = if self.config().is_release() {
@@ -345,6 +349,7 @@ impl<'a> BuildProcess for IosProcess<'a> {
             "{} && {} && {} && {}",
             &build_cmd1, &build_cmd2, &copy_cmd, &build_cmd3
         );
+        let build_cmd = "surmagic xcf";
 
         let output = Command::new("sh")
             .arg("-c")

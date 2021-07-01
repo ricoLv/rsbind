@@ -7,9 +7,10 @@ const SO_NAME: &str = "ffi";
 
 ///
 /// Android Configuration struct
-///
+/// 
 #[derive(Clone, Deserialize, Debug)]
 pub struct Android {
+    pub min_ver: Option<String>,
     pub ndk_stand_alone: Option<String>,
     pub rustc_param: Option<String>,
     pub arch: Option<Vec<String>>,
@@ -23,44 +24,39 @@ pub struct Android {
 }
 
 impl Default for Android {
-    fn default() -> Self {
-        let arch = Some(
-            PHONE_ARCHS
-                .to_vec()
-                .into_iter()
-                .map(|item| item.to_owned())
-                .collect(),
-        );
+   fn default() -> Self {
+       let arch = Some(PHONE_ARCHS
+            .to_vec()
+            .into_iter()
+            .map(|item| item.to_owned())
+            .collect());
+        
+        let arch_64 = Some(PHONE64_ARCHS
+            .to_vec()
+            .into_iter()
+            .map(|item| item.to_owned())
+            .collect());
 
-        let arch_64 = Some(
-            PHONE64_ARCHS
-                .to_vec()
-                .into_iter()
-                .map(|item| item.to_owned())
-                .collect(),
-        );
-
-        let arch_x86 = Some(
-            X86_ARCHS
-                .to_vec()
-                .into_iter()
-                .map(|item| item.to_owned())
-                .collect(),
-        );
-
-        Self {
-            ndk_stand_alone: None,
-            rustc_param: Some("--features rsbind".to_owned()),
-            arch,
-            arch_64,
-            arch_x86,
-            release: Some(true),
-            namespace: Some(NAMESPACE.to_owned()),
-            so_name: Some(SO_NAME.to_owned()),
-            ext_lib: None,
-            features_def: None,
-        }
-    }
+        let arch_x86 = Some(X86_ARCHS
+            .to_vec()
+            .into_iter()
+            .map(|item| item.to_owned())
+            .collect());
+        
+       Self {
+            min_ver: Some("19".to_owned()),
+          ndk_stand_alone: None,
+          rustc_param: Some("--features rsbind".to_owned()),
+          arch,
+          arch_64,
+          arch_x86,
+          release: Some(true),
+          namespace: Some(NAMESPACE.to_owned()),
+          so_name: Some(SO_NAME.to_owned()),
+          ext_lib: None,
+          features_def: None
+       }
+   }
 }
 
 impl Android {
@@ -93,7 +89,9 @@ impl Android {
             "".to_owned()
         }
     }
-
+    pub fn min_ver(&self) -> String {
+        self.min_ver.clone().unwrap_or("19".to_owned())
+    }
     pub fn phone_archs(&self) -> Vec<String> {
         let default_phone_archs = PHONE_ARCHS
             .to_vec()
@@ -113,11 +111,11 @@ impl Android {
             .into_iter()
             .map(|a| a.to_owned())
             .collect();
-
-        match self.arch_64 {
-            Some(ref arch) => arch.to_owned(),
-            None => default_phone64_archs,
-        }
+            
+            match self.arch_64 {
+                Some(ref arch) => arch.to_owned() ,
+                None => default_phone64_archs,
+            }
     }
 
     pub fn x86_archs(&self) -> Vec<String> {
