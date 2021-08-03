@@ -26,10 +26,10 @@ impl CallbackGenStrategy for JavaCallbackStrategy {
         let arg_name_ident = Ident::new(&arg.name, Span::call_site());
 
         // find the callback type for this argument.
-        // println!("arg_convert trait_desc {:?} {:?}", trait_desc, callbacks);
+        println!("arg_convert trait_desc {:?} {:?}", trait_desc, callbacks);
         let mut callback_desc = None;
         for desc in callbacks {
-            // println!("arg_convert {:?}", desc);
+            println!("arg_convert {:?}", desc);
             if desc.name == arg.origin_ty {
                 callback_desc = Some(desc);
             }
@@ -45,12 +45,12 @@ impl CallbackGenStrategy for JavaCallbackStrategy {
         let _callback_methods = TokenStream::new();
         let callback_desc = callback_desc.unwrap();
         let mut methods_result = TokenStream::new();
-        let mut delete_local_ref = TokenStream::new();
         for method in callback_desc.methods.iter() {
             // arguments converting in callback
             let mut args_convert = TokenStream::new();
             let mut method_java_sig = "(J".to_owned();
             let mut cb_arg_array = quote!(JValue::Long(self.index),);
+            let mut delete_local_ref = TokenStream::new();
             for cb_arg in method.args.iter() {
                 let cb_arg_name = Ident::new(&format!("j_{}", cb_arg.name), Span::call_site());
                 let cb_origin_arg_name = Ident::new(&cb_arg.name, Span::call_site());

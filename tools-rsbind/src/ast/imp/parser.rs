@@ -6,7 +6,7 @@ use errors::ErrorKind::*;
 use errors::*;
 use std::fs;
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use syn;
 
 ///
@@ -20,6 +20,9 @@ pub(crate) fn parse_dir(dir: &PathBuf) -> Result<Vec<ImpDesc>> {
 
     for file in imp_dir {
         let real_file = file.map_err(|e| ParseError(e.to_string()))?;
+        if real_file.path().is_dir() {
+            continue;
+        }
         let file_path = real_file.path();
         let path_str = file_path.to_str().ok_or(ParseError(
             "can't get path from PathBuf when parsing imps.".to_string(),

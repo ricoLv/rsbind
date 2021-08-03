@@ -92,6 +92,15 @@ impl Android {
     pub fn min_ver(&self) -> String {
         self.min_ver.clone().unwrap_or("19".to_owned())
     }
+    pub fn min_ver_64(&self) -> String {
+        let ver_str = self.min_ver();
+        let ver_int: u32 = ver_str.parse().unwrap_or(19);
+        if ver_int < 21 {
+            "21".to_owned()
+        } else {
+            ver_str
+        }
+    }
     pub fn phone_archs(&self) -> Vec<String> {
         let default_phone_archs = PHONE_ARCHS
             .to_vec()
