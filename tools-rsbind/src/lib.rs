@@ -1,3 +1,5 @@
+#![feature(drain_filter)]
+
 #![recursion_limit = "128"]
 extern crate syn;
 #[macro_use]
@@ -65,6 +67,7 @@ pub enum Target {
     All,
 }
 
+#[derive(PartialEq)]
 pub enum Action {
     GenAst,
     GenBridge,
@@ -123,37 +126,54 @@ impl Bind {
         let config = config::parse(&self.prj_path);
         println!("rsbind config in {:?} is {:?}", &self.prj_path, config);
 
-        let crate_name = self.parse_crate_name()?;
-
-        match self.action {
-            Action::GenAst => {
-                self.parse_ast(crate_name.clone())?;
-                return Ok(());
+        let (crate_name, default_features) = self.parse_crate_name()?;
+        let ios_config_features = {
+            let ios = config.clone().unwrap().ios.unwrap_or(Ios::default());
+            if ios.default_feature.unwrap_or_default() {
+                ios.features().into_iter().chain(default_features.clone()).collect()
+            } else {
+                ios.features()
             }
-            _ => (),
-        }
-
+        };
+        let android_config_features = {
+            let android = config.clone().unwrap().android.unwrap_or(Android::default());
+            if android.default_feature.unwrap_or_default() {
+                android.features().into_iter().chain(default_features.clone()).collect()
+            } else {
+                android.features()
+            }
+        };
         Ok(match self.target {
             Target::Ios => {
-                let ast = &self.get_ast_if_need(crate_name.clone())?;
+                let ast = &self.get_ast_if_need(crate_name.clone(), &ios_config_features)?;
+                if self.action == Action::GenAst {
+                    return Ok(());
+                }
                 self.gen_for_ios(&crate_name, ast, config.clone())?;
             }
             Target::Android => {
-                let ast = &self.get_ast_if_need(crate_name.clone())?;
+                let ast = &self.get_ast_if_need(crate_name.clone(), &android_config_features)?;
+                if self.action == Action::GenAst {
+                    return Ok(());
+                }
                 self.gen_for_android(&crate_name, ast, config.clone())?;
             }
             Target::All => {
-                let ast_result = self.get_ast_if_need(crate_name.clone())?;
-                self.gen_for_ios(&crate_name, &ast_result, config.clone())?;
-                self.gen_for_android(&crate_name, &ast_result, config.clone())?;
+                let ast_android = self.get_ast_if_need(crate_name.clone(), &android_config_features)?;
+                let ast_ios = self.get_ast_if_need(crate_name.clone(), &ios_config_features)?;
+                if self.action == Action::GenAst {
+                    return Ok(());
+                }
+                self.gen_for_ios(&crate_name, &ast_ios, config.clone())?;
+                self.gen_for_android(&crate_name, &ast_android, config.clone())?;
             }
         })
     }
 
-    fn get_ast_if_need(&self, crate_name: String) -> Result<AstResult> {
+    fn get_ast_if_need(&self, crate_name: String, features: &Vec<String>) -> Result<AstResult> {
         match self.action {
             Action::GenBridge | Action::GenBindSrc | Action::All => {
-                self.parse_ast(crate_name.clone())
+                self.parse_ast(crate_name.clone(), features)
             }
             _ => {
                 use std::collections::HashMap;
@@ -167,14 +187,14 @@ impl Bind {
         }
     }
 
-    fn parse_ast(&self, crate_name: String) -> Result<AstResult> {
+    fn parse_ast(&self, crate_name: String, features: &Vec<String>) -> Result<AstResult> {
         let prj_path = PathBuf::from(&self.prj_path);
         if self.ast_path.exists() {
             fs::remove_dir_all(&self.ast_path)?;
         }
         fs::create_dir_all(&self.ast_path)?;
         return ast::AstHandler::new(crate_name)
-            .parse(&prj_path)?
+            .parse(&prj_path, features)?
             .flush(&self.ast_path);
     }
 
@@ -276,10 +296,14 @@ impl Bind {
     ///
     /// parse the crate name of origin project from Cargo.toml
     ///
-    fn parse_crate_name(&self) -> Result<String> {
+    fn parse_crate_name(&self) -> Result<(String, Vec<String>)> {
         let toml_path = PathBuf::from(&self.prj_path).join("Cargo.toml");
         let manifest = cargo::manifest(toml_path.as_path())?;
+        let default_features = match manifest.features {
+            None => vec![],
+            Some(features) => features.default.unwrap_or_default(),
+        };
         println!("parse project name = {}", manifest.package.name);
-        Ok(manifest.package.name)
+        Ok((manifest.package.name, default_features))
     }
 }

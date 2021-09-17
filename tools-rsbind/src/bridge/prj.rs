@@ -14,6 +14,7 @@ pub(crate) struct Unpack<'a> {
     pub host_crate: &'a str,
     pub buf: &'a [u8],
     pub features: &'a Vec<String>,
+    pub default_future: bool,
 }
 
 impl<'a> Unpack<'a> {
@@ -36,12 +37,13 @@ impl<'a> Unpack<'a> {
             &format!("$({}-host_crate_underscore)", MAGIC_NUM),
             &self.host_crate.replace("-", "_"),
         );
-
+        let replaced = replaced.replace(
+            &format!("$({}-default_features)", MAGIC_NUM),
+            &self.default_future.to_string(),
+        );
         // add some features defination.
-        let mut feature_defs = String::new();
-        for feature in self.features.iter() {
-            feature_defs = format!("{}\n", feature);
-        }
+        let feature_defs = format!("default = [ {} ]\n", self.features.iter().map(|item| format!("\"{}/{}\"",self.host_crate, item)).collect::<Vec<String>>().join(", "));
+        
 
         let replaced = replaced.replace(&format!("$({}-features)", MAGIC_NUM), &feature_defs);
         fs::write(manifest_path, replaced)

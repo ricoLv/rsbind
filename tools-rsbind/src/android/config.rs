@@ -21,6 +21,7 @@ pub struct Android {
     pub so_name: Option<String>,
     pub ext_lib: Option<Vec<String>>,
     pub features_def: Option<Vec<String>>,
+    pub default_feature: Option<bool>,
 }
 
 impl Default for Android {
@@ -44,7 +45,7 @@ impl Default for Android {
             .collect());
         
        Self {
-            min_ver: Some("19".to_owned()),
+          min_ver: Some("19".to_owned()),
           ndk_stand_alone: None,
           rustc_param: Some("--features rsbind".to_owned()),
           arch,
@@ -54,7 +55,8 @@ impl Default for Android {
           namespace: Some(NAMESPACE.to_owned()),
           so_name: Some(SO_NAME.to_owned()),
           ext_lib: None,
-          features_def: None
+          features_def: None,
+          default_feature: Some(true),
        }
    }
 }

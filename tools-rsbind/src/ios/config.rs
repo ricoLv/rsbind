@@ -16,6 +16,7 @@ pub struct Ios {
     pub release: Option<bool>,
     pub features_def: Option<Vec<String>>,
     pub toolchains: Option<HashMap<String, String>>,
+    pub default_feature: Option<bool>,
 }
 
 impl Default for Ios {
@@ -39,6 +40,7 @@ impl Default for Ios {
             release: Some(true),
             features_def: None,
             toolchains: None,
+            default_feature: Some(true)
         }
     }
 }

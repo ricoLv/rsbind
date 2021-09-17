@@ -34,7 +34,7 @@ impl AstHandler {
         AstHandler { crate_name }
     }
 
-    pub(crate) fn parse(&self, origin_prj_path: &PathBuf) -> Result<AstResult> {
+    pub(crate) fn parse(&self, origin_prj_path: &PathBuf, features: &Vec<String> ) -> Result<AstResult> {
         let imp_dir_path = origin_prj_path.join(IMP_DIR);
         let imp_desc = imp::parser::parse_dir(&imp_dir_path)?;
 
@@ -57,7 +57,7 @@ impl AstHandler {
                 .to_str()
                 .unwrap()
                 .to_string();
-            let results = contract::parser::parse(self.crate_name.clone(), &path).unwrap();
+            let results = contract::parser::parse(self.crate_name.clone(), &path, features).unwrap();
             trait_descs.insert(mod_name.to_owned(), results.0);
             struct_descs.insert(mod_name.to_owned(), results.1);
         }

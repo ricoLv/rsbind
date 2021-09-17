@@ -8,13 +8,19 @@ use toml;
 #[derive(Clone, Deserialize, Debug)]
 pub struct Manifest {
     pub package: Package,
+    pub features: Option<Features>,
 }
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct Package {
     pub name: String,
+    
 }
 
+#[derive(Clone, Deserialize, Debug)]
+pub struct Features {
+    pub default: Option<Vec<String>>,
+}
 /// Parse the Cargo.toml for a given path
 pub fn manifest(manifest_path: &Path) -> Result<Manifest> {
     let mut s = String::new();

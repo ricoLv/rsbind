@@ -3,15 +3,59 @@
 //!
 use super::super::types::*;
 use super::desc::*;
+use proc_macro2::Group;
+use proc_macro2::Ident;
+use proc_macro2::TokenTree;
+use quote::__private::ext::RepToTokensExt;
 use syn;
 
 use errors::ErrorKind::*;
 use errors::*;
+use syn::Attribute;
 use syn::TraitBound;
 use syn::TypeParamBound;
 use std::fs::File;
 use std::io::Read;
+use std::iter::FromIterator;
 use std::path::PathBuf;
+
+
+fn is_feature_support(features: &Vec<String>, attrs: &Vec<Attribute>) -> bool {
+    for attr in attrs {
+        println!("is_feature_support ound attr => {:?}", attr);
+        if let Ok(group)  = syn::parse2::<Group>(attr.tokens.clone()) {
+            println!("is_feature_support found group => {:?}", &group);
+            let mut indent = None;
+            let mut literal = None;
+            for it in group.stream().into_iter() {
+                println!("is_feature_support found it => {}", &it);
+                match it {
+                    TokenTree::Ident(id) => indent = Some(id.to_string()),
+                    TokenTree::Literal(id) => {
+                        let l = id.to_string().trim_matches('"').to_owned();
+                        literal = Some(l)
+                    }
+                    _ => {}
+                }
+            }
+            match (indent, literal) {
+                (Some(ident), Some(literal)) if &ident == "feature" => {
+                    if features.contains(&literal) {
+                        
+                    } else {
+                        println!("not support feature 'literal");
+                        return false;
+                    }
+                }
+                _ => {
+
+                }
+            }
+        }
+        println!("found attr end");
+    }
+    true
+}
 
 ///
 /// parse a syn file to TraitDesc which depicting the structure of the trait.
@@ -19,7 +63,9 @@ use std::path::PathBuf;
 pub(crate) fn parse(
     crate_name: String,
     file_path: &PathBuf,
+    features: &Vec<String>,
 ) -> Result<(Vec<TraitDesc>, Vec<StructDesc>)> {
+    println!("parse features {:?}", features);
     let mut file = File::open(file_path).map_err(|e| ParseError(e.to_string()))?;
 
     let mut src = String::new();
@@ -32,7 +78,7 @@ pub(crate) fn parse(
     let mut struct_descs = vec![];
 
     // loop all the trait
-    for item in syn_file.items.iter() {
+    for item in syn_file.items {
         let mod_name = PathBuf::from(file_path)
             .file_stem()
             .unwrap()
@@ -40,13 +86,15 @@ pub(crate) fn parse(
             .unwrap()
             .to_string();
 
-        match *item {
+        match item {
             syn::Item::Trait(ref trait_inner) => {
                 let trait_name = trait_inner.ident.to_string();
                 println!("found trait => {}", trait_inner.ident);
-
-                let methods = parse_methods(&trait_inner.items)?;
-
+                // println!("found attrs => {:?}", trait_inner.attrs);
+                if !is_feature_support(features, &trait_inner.attrs) {
+                    continue;
+                }
+                let methods = parse_methods(&trait_inner.items).unwrap();
                 let trait_desc = TraitDesc {
                     name: trait_name,
                     ty: "trait".to_string(),
@@ -61,7 +109,9 @@ pub(crate) fn parse(
             syn::Item::Struct(ref struct_inner) => {
                 println!("found struct => {}", &struct_inner.ident);
                 let stuct_name = struct_inner.ident.to_string();
-
+                if !is_feature_support(features, &struct_inner.attrs) {
+                    continue;
+                }
                 let mut field_descs = vec![];
                 let fields = &struct_inner.fields;
                 for field in fields.iter() {
@@ -255,7 +305,7 @@ fn parse_one_arg(input: &syn::FnArg) -> Result<ArgDesc> {
                         let angle_bracketed = &segments[segments.len() - 1].arguments;
                         match angle_bracketed {
                             syn::PathArguments::AngleBracketed(t) => {
-                                let mut arg = &t.args[0];
+                                let arg = &t.args[0];
                                 println!("AngleBracketed arg  {:?})", arg);
                                 match arg {
                                     syn::GenericArgument::Type(ty) => match ty {

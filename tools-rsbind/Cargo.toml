@@ -11,7 +11,7 @@ serde_json = "1.0"
 serde_derive = "1.0"
 serde = "1.0"
 zip = "0.5.5"
-fs_extra = "1.1.0"
+fs_extra = "1.2.0"
 toml = "0.5.6"
 jni = { version = "0.19.0", default-features = false }
 # jni = { git = "https://github.com/prevoty/jni-rs" }
@@ -20,9 +20,9 @@ genco = "0.4.0"
 # genco = {git = "https://github.com/sidneywang/genco", branch="master"}
 
 [dependencies.syn]
-version = "1.0.73"
-default_features = false
-features = ["parsing", "full", "extra-traits"]
+version = "1.0.75"
+# default_features = false
+features = ["quote", "fold", "visit-mut", "visit", "full", "extra-traits"]
 
 [lib]
 name = "rsbind_core"

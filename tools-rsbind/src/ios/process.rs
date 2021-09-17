@@ -106,6 +106,7 @@ impl<'a> BuildProcess for IosProcess<'a> {
             host_crate: self.host_crate_name,
             buf,
             features: &self.config().features(),
+            default_future: self.config().default_feature.unwrap_or_default(),
         };
 
         unpack.unpack()?;

@@ -1,3 +1,5 @@
+#![feature(drain_filter)]
+
 extern crate rsbind_core as gen;
 
 use gen::Action;

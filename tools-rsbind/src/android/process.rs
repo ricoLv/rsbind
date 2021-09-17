@@ -86,8 +86,8 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
                 host_crate: self.host_crate_name,
                 buf,
                 features: &self.config().features(),
+                default_future: self.config().default_feature.unwrap_or_default(),
             };
-
             unpack.unpack()?;
         }
 
@@ -122,6 +122,24 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
                 self.config().release_str(),
                 &self.config().rustc_param()
             );
+            // let mut command = Command::new("sh");
+            // if &self.config().min_ver() == "19" && phone_arch == "armv7-linux-androideabi" {
+            //     command.env("BUILD_ARMV7_ANDROID_19", "true");
+            // }
+            // let output = command
+            // .arg("-c")
+            // .arg(tmp)
+            // .current_dir(self.bridge_prj_path)
+            // .output()?;
+
+            // io::stdout().write_all(&output.stdout)?;
+            // io::stderr().write_all(&output.stderr)?;
+
+            // if !output.status.success() {
+            //     return Err(
+            //         CommandError(format!("run build android rust project build failed. ")).into(),
+            //     );
+            // }
             build_cmds = format!("{} && {}", &build_cmds, &tmp);
         }
 
@@ -154,37 +172,37 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
         } else {
             "debug"
         };
+        if self.config().is_release() {
+            let mut strip_cmds = String::from("true");
+            for phone_arch in phone_archs.iter() {
+                let tmp = format!(
+                    "arm-linux-androideabi-strip -s target/{}/{}/{}",
+                    phone_arch,
+                    debug_release,
+                    self.lib_name()
+                );
+                strip_cmds = format!("{} && {}", &strip_cmds, &tmp);
+            }
 
-        let mut strip_cmds = String::from("true");
-        for phone_arch in phone_archs.iter() {
-            let tmp = format!(
-                "arm-linux-androideabi-strip -s target/{}/{}/{}",
-                phone_arch,
-                debug_release,
-                self.lib_name()
-            );
-            strip_cmds = format!("{} && {}", &strip_cmds, &tmp);
+            for phone64_arch in phone64_archs.iter() {
+                let tmp = format!(
+                    "aarch64-linux-android-strip -s target/{}/{}/{}",
+                    phone64_arch,
+                    debug_release,
+                    self.lib_name()
+                );
+                strip_cmds = format!("{} && {}", &strip_cmds, &tmp);
+            }
+
+            build_cmds = format!("{} && {}", &build_cmds, &strip_cmds);
         }
-
-        for phone64_arch in phone64_archs.iter() {
-            let tmp = format!(
-                "aarch64-linux-android-strip -s target/{}/{}/{}",
-                phone64_arch,
-                debug_release,
-                self.lib_name()
-            );
-            strip_cmds = format!("{} && {}", &strip_cmds, &tmp);
-        }
-
-        let cmds = format!("{} && {}", &build_cmds, &strip_cmds);
-
-        println!("run building => {}", &cmds);
+        
+        println!("run building => {}", &build_cmds);
 
         let output = Command::new("sh")
             .arg("-c")
-            .arg(cmds)
+            .arg(build_cmds)
             .current_dir(self.bridge_prj_path)
-            .env("ANDROID_PLATFORM=", self.config().min_ver())
             .output()?;
 
         io::stdout().write_all(&output.stdout)?;
@@ -369,11 +387,6 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
             copy_inside: true,
             depth: 65535,
             content_only: false,
-        };
-        let debug_release = if self.config().is_release() {
-            "release"
-        } else {
-            "debug"
         };
 
         let src_arr = self
