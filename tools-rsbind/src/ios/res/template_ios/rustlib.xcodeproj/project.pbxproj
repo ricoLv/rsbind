@@ -9,9 +9,10 @@
 /* Begin PBXBuildFile section */
 		121688D722315D6600692133 /* SynchronizedClosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121688D622315D6600692133 /* SynchronizedClosure.swift */; };
 		12ECAF8D20E636540038F634 /* rustlib.h in Headers */ = {isa = PBXBuildFile; fileRef = 12ECAF8B20E636540038F634 /* rustlib.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		12ECAF9520E636770038F634 /* ffi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 12ECAF9320E636770038F634 /* ffi.a */; };
 		12ECAFCA20E8C7CF0038F634 /* ffi.h in Headers */ = {isa = PBXBuildFile; fileRef = 12ECAF9420E636770038F634 /* ffi.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		12ECAFD920EA22290038F634 /* ffi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ECAFD820EA22290038F634 /* ffi.swift */; };
+		857A6D0D2825344D003ED361 /* ffiDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857A6D0C2825344D003ED361 /* ffiDictionary.swift */; };
+		857A6D0F282535AC003ED361 /* ffi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 857A6D0E282535AC003ED361 /* ffi.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,10 +20,11 @@
 		12ECAF8820E636540038F634 /* rustlib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = rustlib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		12ECAF8B20E636540038F634 /* rustlib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = rustlib.h; sourceTree = "<group>"; };
 		12ECAF8C20E636540038F634 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		12ECAF9320E636770038F634 /* ffi.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ffi.a; sourceTree = "<group>"; };
 		12ECAF9420E636770038F634 /* ffi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ffi.h; sourceTree = "<group>"; };
 		12ECAFCC20E8DF0D0038F634 /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
 		12ECAFD820EA22290038F634 /* ffi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ffi.swift; sourceTree = "<group>"; };
+		857A6D0C2825344D003ED361 /* ffiDictionary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ffiDictionary.swift; sourceTree = "<group>"; };
+		857A6D0E282535AC003ED361 /* ffi.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ffi.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -30,7 +32,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				12ECAF9520E636770038F634 /* ffi.a in Frameworks */,
+				857A6D0F282535AC003ED361 /* ffi.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -56,9 +58,10 @@
 		12ECAF8A20E636540038F634 /* rustlib */ = {
 			isa = PBXGroup;
 			children = (
+				857A6D0E282535AC003ED361 /* ffi.a */,
+				857A6D0C2825344D003ED361 /* ffiDictionary.swift */,
 				121688D622315D6600692133 /* SynchronizedClosure.swift */,
 				12ECAF9420E636770038F634 /* ffi.h */,
-				12ECAF9320E636770038F634 /* ffi.a */,
 				12ECAF8B20E636540038F634 /* rustlib.h */,
 				12ECAF8C20E636540038F634 /* Info.plist */,
 				12ECAFCC20E8DF0D0038F634 /* module.modulemap */,
@@ -149,6 +152,7 @@
 			files = (
 				12ECAFD920EA22290038F634 /* ffi.swift in Sources */,
 				121688D722315D6600692133 /* SynchronizedClosure.swift in Sources */,
+				857A6D0D2825344D003ED361 /* ffiDictionary.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

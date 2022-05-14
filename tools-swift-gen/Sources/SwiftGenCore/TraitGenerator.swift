@@ -185,7 +185,7 @@ class TraitGenerator {
                                     // if base == AstBaseType.STRUCT {
                                     vecType = arg.origin_ty.replacingOccurrences(of: "Vec", with: "Array")
                                     // }
-                                    if (if base == AstBaseType.STRUCT) {
+                                    if ( base == AstBaseType.STRUCT) {
                                         closureBuilder.add(codeLine: "let c_tmp_\(arg.name) = String(cString:\(arg.name)!)")
                                             .add(codeLine: "var c_option_\(arg.name): \(vecType)?")
                                             .add(codeLine: "autoreleasepool {")

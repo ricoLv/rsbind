@@ -120,7 +120,7 @@ open class TypeName: Importable {
                 metatype.init(keyword: nonOptionalKeyword[chars.index(after: chars.startIndex)..<splitIndex]),
                 metatype.init(keyword: nonOptionalKeyword[chars.index(after: splitIndex)..<endIndex])
             ]
-            self.keyword = "Dictionary"
+            self.keyword = "ffiDictionary"
             
         } else if TypeName.isArray(nonOptionalKeyword) {
             let chars = nonOptionalKeyword

@@ -46,7 +46,7 @@ public final class SwiftGen {
         let globalCallbacksSpec = FieldSpec.builder(for: "globalCallbacks", type: TypeName.init(keyword: "[Int64: Any]"), construct: .mutableField)
             .add(parentType: .mutableField)
             .add(modifier: Modifier.Private)
-            .add(initializer: CodeBlock.builder().add(literal: "[Int64: Any]()").build());
+            .add(initializer: CodeBlock.builder().add(literal: "ffiDictionary<Int64, Any>()").build());
         poetFile.append(globalCallbacksSpec.build())
         
         print("appedning global callbacks over")
