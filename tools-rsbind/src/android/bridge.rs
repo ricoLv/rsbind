@@ -93,9 +93,25 @@ impl<'a> FileGenStrategy for JniFileGenStrategy<'a> {
                 static ref JVM : Arc<RwLock<Option<JavaVM<'static>>>> = Arc::new(RwLock::new(None));
             }
 
+            pub fn attach_current_thread() {
+                let env = (*JVM.read().unwrap())
+                .unwrap()
+                .attach_current_thread()
+                .unwrap();
+            }
+            
+            pub fn detach_current_thread() {
+                let env = (*JVM.read().unwrap())
+                .unwrap()
+                .detach_current_thread()
+                .unwrap();
+            }
+
             pub fn set_global_vm(jvm: JavaVM<'static>) {
                 #(let _ = jvm.get_env().unwrap().find_class(#class_names);)*
                 *(JVM.write().unwrap()) = Some(jvm);
+
+                register_attach_and_detach_fn(attach_current_thread,detach_current_thread);
             }
         })
     }

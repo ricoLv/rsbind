@@ -16,13 +16,15 @@ panic = 'abort'
 
 [dependencies]
 $(*521%-host_crate) = { path = "../../"}
-jni = { version = "0.13.1", default-features = false }
+# add detach current thread function
+jni = { git = "https://github.com/ricoLv/jni-rs", branch = "sdk" }
+#jni = { version = "0.19", default-features = false }
 # jni = { git = "https://github.com/king6cong/jni-rs", branch = "sdk" }
 serde_json = "1.0"
 serde_derive = "1.0"
 serde = "1.0"
 lazy_static = "1.0.0"
-android_logger = "0.7"
+android_logger = "0.11"
 log = "0.4"
 
 [features]
