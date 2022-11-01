@@ -110,7 +110,7 @@ impl AstType {
             AstType::Callback => "Ljava/lang/String;".to_owned(),
             AstType::Struct => "Ljava/lang/String;".to_owned(),
             AstType::Vec(ref base_ty)  => match base_ty { 
-                AstBaseType::Byte => "[B;".to_owned(),
+                AstBaseType::Byte => "[B".to_owned(),
                 _ => "Ljava/lang/String;".to_owned(),
             },
         }
