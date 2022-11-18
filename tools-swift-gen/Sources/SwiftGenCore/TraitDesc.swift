@@ -134,8 +134,12 @@ extension AstType {
                 return TypeName.StringType
             case .VOID:
                 return TypeName.AnyType
-            case .VEC(_):
-                return TypeName.init(keyword: self.toStr())
+            case .VEC(let base):
+                if (base == AstBaseType.BYTE){
+                    return TypeName.init(keyword: "Data")
+                }else{
+                    return TypeName.init(keyword: self.toStr())
+                }
             case .CALLBACK(let str):
                 return TypeName.init(keyword: str)
             case .STRUCT(let str):

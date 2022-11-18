@@ -194,6 +194,9 @@ class TraitGenerator {
                                             .add(codeLine: "c_option_\(arg.name) = try! decoder.decode(\(vecType).self, from: c_tmp_json_\(arg.name))")
                                             .add(codeLine: "}")
                                             .add(codeLine: "let c_\(arg.name) = c_option_\(arg.name)!")
+                                    } else if (base == AstBaseType.BYTE){
+                                        closureBuilder.add(codeLine: "let data_option_\(arg.name) = UnsafeBufferPointer<UInt8>(start: \(arg.name)!.pointee.ptr, count: Int(\(arg.name)!.pointee.length))")
+                                            .add(codeLine: "let c_\(arg.name) = Data(data_option_\(arg.name))")
                                     } else {
                                         closureBuilder.add(codeLine: "let c_tmp_\(arg.name) = String(cString:\(arg.name)!)")
                                     }
@@ -253,10 +256,21 @@ class TraitGenerator {
                     builder.add(codeLine: "}")                
                     builder.add(codeLine: "let s_\(arg.name) = \(traitDesc.mod_name)_\(callback!.name)_Model(\(modelArgs)free_callback: callback_free, index: \(arg.name)_index)")
 
-                case AstType.VEC(_):
+                case AstType.VEC(let base):
+                 if ( base == AstBaseType.BYTE ) {
+                    builder.add(codeLine: "var data_\(arg.name) = \(arg.name).withUnsafeBytes {[UInt8](UnsafeBufferPointer(start: $0, count: \(arg.name).count)) }")
+                    builder.add(codeLine: "let s_\(arg.name) = UnsafeMutablePointer<CByteBuffer>.allocate(capacity: 1)")
+                    builder.add(codeLine: "let u_\(arg.name) = UnsafeMutablePointer<UInt8>.allocate(capacity: \(arg.name).count)")
+                    builder.add(codeLine: "data_\(arg.name).withUnsafeMutableBufferPointer{buffer in ")
+                    builder.add(codeLine: "u_\(arg.name).initialize(from: buffer.baseAddress!, count: Int(buffer.count))")
+                    builder.add(codeLine: "s_\(arg.name).pointee.ptr = UnsafePointer<UInt8>(u_\(arg.name))")
+                    builder.add(codeLine: "s_\(arg.name).pointee.length = UInt32(buffer.count)}")
+                 }else{
                     builder.add(codeLine: "let encoder = JSONEncoder()")
                     builder.add(codeLine: "let data_\(arg.name) = try! encoder.encode(\(arg.name))")
                     builder.add(codeLine: "let s_\(arg.name) = String(data: data_\(arg.name), encoding: .utf8)!")
+                 } 
+                    
                 case AstType.VOID:
                     {}()
                 case AstType.STRUCT(_):
@@ -285,7 +299,13 @@ class TraitGenerator {
             return "UnsafePointer<Int8>?"
         case AstType.VOID:
             return "()"
-        case AstType.VEC(_), AstType.STRUCT(_):
+        case AstType.VEC(let base):
+            if ( base == AstBaseType.BYTE ) {
+                return "UnsafePointer<CByteBuffer>?"
+            }else{
+                return "UnsafePointer<Int8>?"
+            }
+        case AstType.STRUCT(_):
             return "UnsafePointer<Int8>?"
         default:
             print("don't support \(type) in callback")

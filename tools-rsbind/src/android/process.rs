@@ -175,8 +175,14 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
         if self.config().is_release() {
             let mut strip_cmds = String::from("true");
             for phone_arch in phone_archs.iter() {
+                // let tmp = format!(
+                //     "arm-linux-androideabi-strip -s target/{}/{}/{}",
+                //     phone_arch,
+                //     debug_release,
+                //     self.lib_name()
+                // );
                 let tmp = format!(
-                    "arm-linux-androideabi-strip -s target/{}/{}/{}",
+                    "llvm-strip -s target/{}/{}/{}",
                     phone_arch,
                     debug_release,
                     self.lib_name()
@@ -185,8 +191,14 @@ impl<'a> BuildProcess for AndroidProcess<'a> {
             }
 
             for phone64_arch in phone64_archs.iter() {
+                // let tmp = format!(
+                //     "aarch64-linux-android-strip -s target/{}/{}/{}",
+                //     phone64_arch,
+                //     debug_release,
+                //     self.lib_name()
+                // );
                 let tmp = format!(
-                    "aarch64-linux-android-strip -s target/{}/{}/{}",
+                    "llvm-strip -s target/{}/{}/{}",
                     phone64_arch,
                     debug_release,
                     self.lib_name()

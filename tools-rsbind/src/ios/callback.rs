@@ -39,6 +39,7 @@ impl CallbackGenStrategy for CCallbackStrategy {
                 );
 
                 let mut strs_to_release: Vec<Ident> = vec![];
+                let mut box_to_release: Vec<Ident> = vec![];
                 // arguments converting in callback
                 let mut args_convert = TokenStream::new();
                 for cb_arg in method.args.iter() {
@@ -57,11 +58,13 @@ impl CallbackGenStrategy for CCallbackStrategy {
                             }
                         }
                         AstType::Vec(ref base_ty) => {
-                            strs_to_release.push(cb_arg_name.clone());
+                            
                             let cb_tmp_arg_name =
                                 Ident::new(&format!("c_tmp_{}", cb_arg.name), Span::call_site());
                             match base_ty {
                                 AstBaseType::Struct => {
+                                    strs_to_release.push(cb_arg_name.clone());
+
                                     let struct_name = cb_arg
                                         .origin_ty
                                         .to_owned()
@@ -80,8 +83,17 @@ impl CallbackGenStrategy for CCallbackStrategy {
                                         let #cb_tmp_arg_name = serde_json::to_string(&#cb_tmp_vec_arg_name);
                                         let #cb_arg_name = CString::new(#cb_tmp_arg_name.unwrap()).unwrap().into_raw();
                                     }
-                                }
+                                },
+                                AstBaseType::Byte => {
+                                    box_to_release.push(cb_arg_name.clone());
+                                    quote! {
+                                        let #cb_tmp_arg_name = CByteBuffer::from_vec(#cb_origin_arg_name.to_owned());
+                                        let #cb_arg_name = Box::into_raw(Box::new(#cb_tmp_arg_name));
+                                    }
+                                },
                                 _ => {
+                                    strs_to_release.push(cb_arg_name.clone());
+
                                     quote! {
                                         let #cb_tmp_arg_name = serde_json::to_string(&#cb_origin_arg_name);
                                         let #cb_arg_name = CString::new(#cb_tmp_arg_name.unwrap()).unwrap().into_raw();
@@ -194,6 +206,7 @@ impl CallbackGenStrategy for CCallbackStrategy {
                         let #fn_method_name = self.#method_name;
                         let result = #fn_method_name(self.index, #(#convert_arg_names),*);
                         #(unsafe {CString::from_raw(#strs_to_release)};)*
+                        #(unsafe {Box::from_raw(#box_to_release)};)*
                         #return_convert
                         #return_var_name
                     }
@@ -311,14 +324,25 @@ impl CCallbackStrategy {
                 tokens.append(Punct::new('*', Spacing::Alone));
                 tokens.append(Ident::new("const", Span::call_site()));
                 tokens.append(Ident::new("c_char", Span::call_site()));
-            }
+            },
             AstType::Struct => {
                 let struct_tokens = self.ty_to_tokens(&AstType::String).unwrap();
                 tokens = quote!(#struct_tokens)
-            }
-            AstType::Vec(_) => {
-                let vec_tokens = self.ty_to_tokens(&AstType::String).unwrap();
-                tokens = quote!(#vec_tokens)
+            },
+            // AstType::Vec(_) => {
+            //     let vec_tokens = self.ty_to_tokens(&AstType::String).unwrap();
+            //     tokens = quote!(#vec_tokens)
+            // }
+            AstType::Vec(base) => match base {
+                AstBaseType::Byte => {
+                    tokens.append(Punct::new('*', Spacing::Alone));
+                    tokens.append(Ident::new("const", Span::call_site()));
+                    tokens.append(Ident::new("CByteBuffer", Span::call_site()));
+                }
+                _ =>{
+                    let vec_tokens = self.ty_to_tokens(&AstType::String).unwrap();
+                    tokens = quote!(#vec_tokens)
+                }
             }
             _ => (),
         };

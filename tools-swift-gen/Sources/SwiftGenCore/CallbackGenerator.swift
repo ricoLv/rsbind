@@ -47,6 +47,9 @@ class CallbackGenerator {
                     let structName = arg.origin_ty.replacingOccurrences(of: "Vec<", with: "").replacingOccurrences(of: ">", with: "")
                     let argSpec = ParameterSpec.builder(for: arg.name, type: TypeName.init(keyword: "[\(structName)]")).build()
                     methodSpec.add(parameter: argSpec)
+                } else if base ==  AstBaseType.BYTE {
+                    let argSpec = ParameterSpec.builder(for: arg.name, type: TypeName.init(keyword: "Data")).build()
+                    methodSpec.add(parameter: argSpec)
                 } else {
                     let argSpec = ParameterSpec.builder(for: arg.name, type: arg.ty.toTypeName()).build()
                     methodSpec.add(parameter: argSpec)

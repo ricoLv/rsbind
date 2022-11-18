@@ -48,11 +48,43 @@ impl FileGenStrategy for CFileGenStrategy {
             use std::ffi::CStr;
             use std::os::raw::c_char;
             use std::ffi::CString;
+            use std::mem;
         })
     }
 
     fn quote_common_part(&self, _traits: &Vec<TraitDesc>) -> Result<TokenStream> {
-        Ok(quote! {})
+        Ok(quote! {
+            #[repr(C)]
+            pub struct CByteBuffer{
+                pub ptr: *const u8,
+                pub length: u32,
+            }
+
+            impl CByteBuffer {
+                fn from_vec(mut v: Vec<u8>) -> CByteBuffer {
+                    v.shrink_to_fit(); // ensure capacity == size
+                    let a = CByteBuffer {
+                        ptr: v.as_ptr() as *const u8,
+                        length: v.len() as u32,
+                    };
+                    mem::forget(v);
+                    a
+                }
+                fn into_vec(&self) -> Vec<u8> {
+                    unsafe {
+                        let byte_buffer_length = self.length as usize;
+                        if byte_buffer_length >0 {
+                            let mut byte_buffer = vec![0u8;byte_buffer_length];
+                            let dest_ptr = &mut byte_buffer[0] as *mut u8;
+                            std::ptr::copy_nonoverlapping(self.ptr, dest_ptr, byte_buffer_length);
+                            byte_buffer
+                        }else{
+                            vec![]
+                        }
+                    }
+                }
+            }
+        })
     }
 
     fn quote_callback_structures(&self, trait_desc: &TraitDesc) -> Result<TokenStream> {
@@ -212,13 +244,22 @@ impl FileGenStrategy for CFileGenStrategy {
                     let #rust_arg_name: String = #c_slice_ident.to_owned();
                 }
             }
-            AstType::Vec(_base) => {
-                let c_str_ident = Ident::new(&format!("c_str_{}", &arg.name), Span::call_site());
-                let c_slice_ident = Ident::new(&format!("c_str_{}", &arg.name), Span::call_site());
-                quote! {
-                    let #c_str_ident: &CStr = unsafe{CStr::from_ptr(#arg_name_ident)};
-                    let #c_slice_ident: &str = #c_str_ident.to_str().unwrap();
-                    let #rust_arg_name = serde_json::from_str(&#c_slice_ident.to_owned()).unwrap();
+            AstType::Vec(ref base_ty) => match base_ty {
+                AstBaseType::Byte => {
+                    let c_bytes_ident = Ident::new(&format!("c_bytes_{}", &arg.name), Span::call_site());
+                    quote! {
+                        let #c_bytes_ident: &CByteBuffer = unsafe{ &(* #arg_name_ident)};
+                        let #rust_arg_name = #c_bytes_ident.into_vec();
+                    }
+                }
+                _ =>{
+                    let c_str_ident = Ident::new(&format!("c_str_{}", &arg.name), Span::call_site());
+                    let c_slice_ident = Ident::new(&format!("c_str_{}", &arg.name), Span::call_site());
+                    quote! {
+                        let #c_str_ident: &CStr = unsafe{CStr::from_ptr(#arg_name_ident)};
+                        let #c_slice_ident: &str = #c_str_ident.to_str().unwrap();
+                        let #rust_arg_name = serde_json::from_str(&#c_slice_ident.to_owned()).unwrap();
+                    }
                 }
             }
             AstType::Callback => {
@@ -309,10 +350,34 @@ impl FileGenStrategy for CFileGenStrategy {
             AstType::Struct => {
                 let struct_tokens = self.ty_to_tokens(&AstType::String, direction)?;
                 tokens = quote!(#struct_tokens)
-            }
-            AstType::Vec(_) => {
-                let vec_tokens = self.ty_to_tokens(&AstType::String, direction)?;
-                tokens = quote!(#vec_tokens)
+            },
+            // AstType::Vec(_) => {
+            //     let vec_tokens = self.ty_to_tokens(&AstType::String, direction)?;
+            //     tokens = quote!(#vec_tokens)
+            // }
+            AstType::Vec(base) => match direction {
+                TypeDirection::Argument => match base {
+                    AstBaseType::Byte => {
+                        tokens.append(Punct::new('*', Spacing::Alone));
+                        tokens.append(Ident::new("const", Span::call_site()));
+                        tokens.append(Ident::new("CByteBuffer", Span::call_site()));
+                    }
+                    _ =>{
+                        let vec_tokens = self.ty_to_tokens(&AstType::String, direction)?;
+                        tokens = quote!(#vec_tokens)
+                    }
+                },
+                TypeDirection::Return => match base {
+                    AstBaseType::Byte => {
+                        tokens.append(Punct::new('*', Spacing::Alone));
+                        tokens.append(Ident::new("mut", Span::call_site()));
+                        tokens.append(Ident::new("CByteBuffer", Span::call_site()));
+                    }
+                    _ => {
+                        let vec_tokens = self.ty_to_tokens(&AstType::String, direction)?;
+                        tokens = quote!(#vec_tokens)
+                    }
+                },
             }
             _ => (),
         };
