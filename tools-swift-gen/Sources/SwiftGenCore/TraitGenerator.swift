@@ -195,8 +195,10 @@ class TraitGenerator {
                                             .add(codeLine: "}")
                                             .add(codeLine: "let c_\(arg.name) = c_option_\(arg.name)!")
                                     } else if (base == AstBaseType.BYTE){
-                                        closureBuilder.add(codeLine: "let data_option_\(arg.name) = UnsafeBufferPointer<UInt8>(start: \(arg.name)!.pointee.ptr, count: Int(\(arg.name)!.pointee.length))")
-                                            .add(codeLine: "let c_\(arg.name) = Data(data_option_\(arg.name))")
+                                        closureBuilder.add(codeLine: "let p_\(arg.name) = UnsafeMutablePointer<UInt8>.allocate(capacity: Int(\(arg.name)!.pointee.length))")
+                                        closureBuilder.add(codeLine: "let pb_\(arg.name) = UnsafeMutableBufferPointer(start:p_\(arg.name), count:Int(\(arg.name)!.pointee.length))")
+                                        closureBuilder.add(codeLine: "for (i,_) in pb_\(arg.name).enumerated() { pb_\(arg.name)[i] = UInt8(\(arg.name)!.pointee.ptr[i]) }")
+                                        closureBuilder.add(codeLine: "let c_\(arg.name) = Data(pb_\(arg.name))")
                                     } else {
                                         closureBuilder.add(codeLine: "let c_tmp_\(arg.name) = String(cString:\(arg.name)!)")
                                     }
@@ -260,11 +262,13 @@ class TraitGenerator {
                  if ( base == AstBaseType.BYTE ) {
                     builder.add(codeLine: "var data_\(arg.name) = \(arg.name).withUnsafeBytes {[UInt8](UnsafeBufferPointer(start: $0, count: \(arg.name).count)) }")
                     builder.add(codeLine: "let s_\(arg.name) = UnsafeMutablePointer<CByteBuffer>.allocate(capacity: 1)")
-                    builder.add(codeLine: "let u_\(arg.name) = UnsafeMutablePointer<UInt8>.allocate(capacity: \(arg.name).count)")
+                    builder.add(codeLine: "let p_\(arg.name) = UnsafeMutablePointer<UInt8>.allocate(capacity: \(arg.name).count)")
+                    builder.add(codeLine: "let pb_\(arg.name) = UnsafeMutableBufferPointer(start:p_\(arg.name), count:Int(video_buf.count))")
                     builder.add(codeLine: "data_\(arg.name).withUnsafeMutableBufferPointer{buffer in ")
-                    builder.add(codeLine: "u_\(arg.name).initialize(from: buffer.baseAddress!, count: Int(buffer.count))")
-                    builder.add(codeLine: "s_\(arg.name).pointee.ptr = UnsafePointer<UInt8>(u_\(arg.name))")
-                    builder.add(codeLine: "s_\(arg.name).pointee.length = UInt32(buffer.count)}")
+                    builder.add(codeLine: "for (i,_) in pb_\(arg.name).enumerated() { pb_\(arg.name)[i] = UInt8(buffer[i]) }}")
+                    builder.add(codeLine: "s_\(arg.name).pointee.ptr = UnsafePointer<UInt8>(pb_\(arg.name).baseAddress!)")
+                    builder.add(codeLine: "s_\(arg.name).pointee.length = UInt32(\(arg.name).count)")
+                    builder.add(codeLine: "defer { pb_\(arg.name).deallocate() }")
                  }else{
                     builder.add(codeLine: "let encoder = JSONEncoder()")
                     builder.add(codeLine: "let data_\(arg.name) = try! encoder.encode(\(arg.name))")
